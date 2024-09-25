@@ -44,17 +44,30 @@ class TranslatorMixin:
         """
         Dispatch method that transforms XPath to support pseudo-element
         """
-        pass
+        if isinstance(pseudo_element, FunctionalPseudoElement):
+            if pseudo_element.name == 'attr':
+                return self.xpath_attr_functional_pseudo_element(xpath, pseudo_element)
+        elif isinstance(pseudo_element, PseudoElement):
+            if pseudo_element.name == 'text':
+                return self.xpath_text_simple_pseudo_element(xpath)
+        return xpath
 
     def xpath_attr_functional_pseudo_element(self, xpath: OriginalXPathExpr,
         function: FunctionalPseudoElement) ->XPathExpr:
         """Support selecting attribute values using ::attr() pseudo-element"""
-        pass
+        if not function.arguments:
+            raise ExpressionError("The ::attr() pseudo-element requires an argument.")
+        attribute = function.arguments[0]
+        xpath = XPathExpr(xpath.path, xpath.element)
+        xpath.attribute = attribute
+        return xpath
 
     def xpath_text_simple_pseudo_element(self, xpath: OriginalXPathExpr
         ) ->XPathExpr:
         """Support selecting text nodes using ::text pseudo-element"""
-        pass
+        xpath = XPathExpr(xpath.path, xpath.element)
+        xpath.textnode = True
+        return xpath
 
 
 class GenericTranslator(TranslatorMixin, OriginalGenericTranslator):
@@ -68,6 +81,7 @@ class HTMLTranslator(TranslatorMixin, OriginalHTMLTranslator):
 _translator = HTMLTranslator()
 
 
+@lru_cache(maxsize=256)
 def css2xpath(query: str) ->str:
     """Return translated XPath version of a given CSS query"""
-    pass
+    return _translator.css_to_xpath(query)
