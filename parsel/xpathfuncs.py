@@ -20,7 +20,12 @@ def set_xpathfunc(fname: str, func: Optional[Callable]) ->None:
     .. _`in lxml documentation`: https://lxml.de/extensions.html#xpath-extension-functions
 
     """
-    pass
+    ns = etree.FunctionNamespace(None)
+    if func is None:
+        if fname in ns:
+            del ns[fname]
+    else:
+        ns[fname] = func
 
 
 def has_class(context: Any, *classes: str) ->bool:
@@ -29,4 +34,7 @@ def has_class(context: Any, *classes: str) ->bool:
     Return True if all ``classes`` are present in element's class attr.
 
     """
-    pass
+    if not context.context_node.get('class'):
+        return False
+    node_classes = set(replace_html5_whitespaces(' ', context.context_node.get('class')).split())
+    return all(cls in node_classes for cls in classes)
